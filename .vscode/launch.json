@@ -1,0 +1,13 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python Debugger: Poetry Script",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "Q:\\research\\eigen-guess\\.venv\\Scripts\\poetry.exe",
+            "args": ["-m", "debugpy", "--wait-for-client", "--listen", "5678", "eigen-guess"],
+            "console": "integratedTerminal"
+        }
+    ]
+}

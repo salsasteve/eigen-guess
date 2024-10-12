@@ -3,6 +3,7 @@
 import numpy as np
 import torch
 import torch.nn as nn
+import pytest
 
 from eigen_guess.low_rank import (
     ModuleLowRank,
@@ -11,8 +12,8 @@ from eigen_guess.low_rank import (
     low_rank_approximate,
     svd_decomposition,
 )
-
-from eigen_guess.low_rank_org import low_rank_approximate as lra , ModuleLowRank
+from eigen_guess.low_rank_org import low_rank_approximate as lra
+from eigen_guess.low_rank_org import ModuleLowRank as ModuleLowRankOrg
 
 
 def test_svd_decomposition():
@@ -125,3 +126,107 @@ def test_module_low_rank():
     assert modified_model[4][1].in_features == int(rank3)
     assert modified_model[4][1].out_features == 10
 
+def test_module_low_rank_1_layer():
+    """Test the ModuleLowRank class with one layer."""
+    model = create_sample_model()
+    model2 = create_sample_model()
+    compressor = ModuleLowRankOrg()
+    original_model_lra = compressor(model2)
+    low_rank_module = ModuleLowRank(compress_ratio=3, is_approximate=True, num_layers=1)
+    modified_model = low_rank_module(model)
+
+    assert isinstance(modified_model, nn.Sequential)
+    assert len(modified_model) == 5
+    assert isinstance(modified_model[0], nn.Sequential)
+    assert isinstance(modified_model[0][0], nn.Linear)
+    assert isinstance(modified_model[0][1], nn.Linear)
+    assert isinstance(modified_model[1], nn.ReLU)
+    assert isinstance(modified_model[2], nn.Linear)
+    assert isinstance(modified_model[3], nn.ReLU)
+    assert isinstance(modified_model[4], nn.Linear)
+
+
+    assert modified_model[0][0].in_features == original_model_lra[0][0].in_features
+    assert modified_model[0][0].out_features == original_model_lra[0][0].out_features
+    assert modified_model[0][1].in_features == original_model_lra[0][1].in_features
+    assert modified_model[0][1].out_features == original_model_lra[0][1].out_features
+
+    assert modified_model[2].in_features == 128
+    assert modified_model[2].out_features == 256
+
+    assert modified_model[4].in_features == 256
+    assert modified_model[4].out_features == 10
+
+def test_module_low_rank_2_layers():
+    """Test the ModuleLowRank class with two layers."""
+    model = create_sample_model()
+    model2 = create_sample_model()
+    compressor = ModuleLowRankOrg()
+    original_model_lra = compressor(model2)
+    low_rank_module = ModuleLowRank(compress_ratio=3, is_approximate=True, num_layers=2)
+    modified_model = low_rank_module(model)
+
+    assert isinstance(modified_model, nn.Sequential)
+    assert len(modified_model) == 5
+    assert isinstance(modified_model[0], nn.Sequential)
+    assert isinstance(modified_model[0][0], nn.Linear)
+    assert isinstance(modified_model[0][1], nn.Linear)
+    assert isinstance(modified_model[1], nn.ReLU)
+    assert isinstance(modified_model[2], nn.Sequential)
+    assert isinstance(modified_model[2][0], nn.Linear)
+    assert isinstance(modified_model[2][1], nn.Linear)
+    assert isinstance(modified_model[3], nn.ReLU)
+    assert isinstance(modified_model[4], nn.Linear)
+
+    assert modified_model[0][0].in_features == original_model_lra[0][0].in_features
+    assert modified_model[0][0].out_features == original_model_lra[0][0].out_features
+    assert modified_model[0][1].in_features == original_model_lra[0][1].in_features
+    assert modified_model[0][1].out_features == original_model_lra[0][1].out_features
+
+    assert modified_model[2][0].in_features == original_model_lra[2][0].in_features
+    assert modified_model[2][0].out_features == original_model_lra[2][0].out_features
+    assert modified_model[2][1].in_features == original_model_lra[2][1].in_features
+    assert modified_model[2][1].out_features == original_model_lra[2][1].out_features
+
+    assert modified_model[4].in_features == 256
+    assert modified_model[4].out_features == 10
+
+
+
+def test_module_low_rank_excess_layers():
+    """Test the ModuleLowRank class with more layers than the model."""
+    model = create_sample_model()
+    model2 = create_sample_model()
+    compressor = ModuleLowRankOrg()
+    original_model_lra = compressor(model2)
+    low_rank_module = ModuleLowRank(compress_ratio=3, is_approximate=True, num_layers=20)
+    modified_model = low_rank_module(model)
+
+    assert isinstance(modified_model, nn.Sequential)
+    assert len(modified_model) == 5
+    assert isinstance(modified_model[0], nn.Sequential)
+    assert isinstance(modified_model[0][0], nn.Linear)
+    assert isinstance(modified_model[0][1], nn.Linear)
+    assert isinstance(modified_model[1], nn.ReLU)
+    assert isinstance(modified_model[2], nn.Sequential)
+    assert isinstance(modified_model[2][0], nn.Linear)
+    assert isinstance(modified_model[2][1], nn.Linear)
+    assert isinstance(modified_model[3], nn.ReLU)
+    assert isinstance(modified_model[4], nn.Sequential)
+    assert isinstance(modified_model[4][0], nn.Linear)
+    assert isinstance(modified_model[4][1], nn.Linear)
+
+    assert modified_model[0][0].in_features == original_model_lra[0][0].in_features
+    assert modified_model[0][0].out_features == original_model_lra[0][0].out_features
+    assert modified_model[0][1].in_features == original_model_lra[0][1].in_features
+    assert modified_model[0][1].out_features == original_model_lra[0][1].out_features
+
+    assert modified_model[2][0].in_features == original_model_lra[2][0].in_features
+    assert modified_model[2][0].out_features == original_model_lra[2][0].out_features
+    assert modified_model[2][1].in_features == original_model_lra[2][1].in_features
+    assert modified_model[2][1].out_features == original_model_lra[2][1].out_features
+
+    assert modified_model[4][0].in_features == original_model_lra[4][0].in_features
+    assert modified_model[4][0].out_features == original_model_lra[4][0].out_features
+    assert modified_model[4][1].in_features == original_model_lra[4][1].in_features
+    assert modified_model[4][1].out_features == original_model_lra[4][1].out_features
